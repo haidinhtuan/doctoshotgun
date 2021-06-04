@@ -1,6 +1,8 @@
 # DOCTOSHOTGUN
 
-This script lets you automatically book a vaccine slot on Doctolib in Berlin, Germany in the time period of your choice. Many thanks to @rbignon for the original idea.
+This script lets you automatically book a vaccine slot on Doctolib in Berlin, Germany in the time period of your choice. This script looks specifically for mRNA-based vaccines (Pfizer/BioNTech or Moderna).
+
+Many thanks to @rbignon for the original idea.
 
 
 <p align="center">
