@@ -10,6 +10,7 @@ import datetime
 import argparse
 import getpass
 import unicodedata
+from pprint import pprint
 
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
@@ -150,12 +151,12 @@ class CityNotFound(Exception):
 
 
 class Doctolib(LoginBrowser):
-    BASEURL = 'https://www.doctolib.fr'
+    BASEURL = 'https://www.doctolib.de'
 
     login = URL('/login.json', LoginPage)
-    centers = URL(r'/vaccination-covid-19/(?P<where>\w+)', CentersPage)
+    centers = URL(r'/impfung-covid-19-corona/(?P<where>\w+)', CentersPage)
     center_result = URL(r'/search_results/(?P<id>\d+).json', CenterResultPage)
-    center = URL(r'/centre-de-sante/.*', CenterPage)
+    center = URL(r'/institut/.*', CenterPage)
     center_booking = URL(r'/booking/(?P<center_id>.+).json', CenterBookingPage)
     availabilities = URL(r'/availabilities.json', AvailabilitiesPage)
     second_shot_availabilities = URL(r'/second_shot_availabilities.json', AvailabilitiesPage)
@@ -189,7 +190,7 @@ class Doctolib(LoginBrowser):
         return self._logged
 
     def do_login(self):
-        self.open('https://www.doctolib.fr/sessions/new')
+        self.open('https://www.doctolib.de/sessions/new')
         try:
             self.login.go(json={'kind': 'patient',
                                 'username': self.username,
@@ -201,7 +202,7 @@ class Doctolib(LoginBrowser):
 
         return True
 
-    def find_centers(self, where, motives=('6970', '7005')):
+    def find_centers(self, where, motives=('6768', '6936', '7109', '7978')):
         for city in where:
             try:
                 self.centers.go(where=city, params={'ref_visit_motive_ids[]': motives})
@@ -222,6 +223,15 @@ class Doctolib(LoginBrowser):
                     yield page.doc['search_result']
                 except KeyError:
                     pass
+                
+        #for center_id in [158431, 158434, 158437, 158435, 158436, 158433]:
+        for center_id, place in [(158431, '1. Arena Berlin'), (158434, '2. Messe Berlin/ Halle 21'), (158437, '6. Erika-Heß-Eisstadion'), (158435, '5. Velodrom Berlin'), (158436, '3. Flughafen Berlin-Tegel/ Terminal C'), (158433, '4. Flughafen Tempelhof/ Hangar 4')]:
+            yield {
+                'city': 'Berlin',
+                'name_with_title': f'Impfzentrum {center_id}',
+                'url': f'/institut/berlin/ciz-berlin-berlin?pid=practice-{center_id}',
+                'place': place
+            }
 
     def get_patients(self):
         self.master_patient.go()
@@ -242,7 +252,7 @@ class Doctolib(LoginBrowser):
 
         center_page = self.center_booking.go(center_id=center_id)
         profile_id = self.page.get_profile_id()
-        motive_id = self.page.find_motive(r'1re.*(Pfizer|Moderna)')
+        motive_id = self.page.find_motive(r'(Pfizer|Moderna)')
 
         if not motive_id:
             log('Unable to find mRNA motive')
@@ -376,7 +386,7 @@ class Doctolib(LoginBrowser):
         self.appointment_post.go(id=a_id, data=json.dumps(data), headers=headers, method='PUT')
 
         if 'redirection' in self.page.doc and not 'confirmed-appointment' in self.page.doc['redirection']:
-            log('  ├╴ Open %s to complete', 'https://www.doctolib.fr' + self.page.doc['redirection'])
+            log('  ├╴ Open %s to complete', 'https://www.doctolib.de' + self.page.doc['redirection'])
 
         self.appointment_post.go(id=a_id)
 
@@ -410,7 +420,7 @@ class Application:
         parser.add_argument('--pfizer', '-z', action='store_true', help='select only Pfizer vaccine')
         parser.add_argument('--moderna', '-m', action='store_true', help='select only Moderna vaccine')
         parser.add_argument('--patient', '-p', type=int, default=-1, help='give patient ID')
-        parser.add_argument('--time-window', '-t', type=int, default=7, help='set how many next days the script look for slots (default = 7)')
+        parser.add_argument('--time-window', '-t', type=int, default=30, help='set how many next days the script look for slots (default = 30)')
         parser.add_argument('--center', '-c', action='append', help='filter centers')
         parser.add_argument('--start-date', type=str, default=None, help='date on which you want to book the first slot (format should be DD/MM/YYYY)')
         parser.add_argument('--dry-run', action='store_true', help='do not really book the slot')
@@ -493,9 +503,9 @@ class Application:
 
                     sleep(1)
 
-                sleep(5)
+                sleep(15)
         except CityNotFound as e:
-            print('\n%s: City %s not found. For now Doctoshotgun works only in France.' % (colored('Error', 'red'), colored(e, 'yellow')))
+            print('\n%s: City %s not found. For now this version of Doctoshotgun works only in Berlin/Germany.' % (colored('Error', 'red'), colored(e, 'yellow')))
             return 1
 
         return 0
