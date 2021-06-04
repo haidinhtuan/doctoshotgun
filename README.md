@@ -4,7 +4,7 @@ This script lets you automatically book a vaccine slot on Doctolib in Berlin, Ge
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rbignon/doctoshotgun/da5f65a1e2ecc7b543376b1549c62004a454b90d/example.png">
+  <img src="https://github.com/haidinhtuan/doctoshotgun/blob/master/example.png?raw=true">
 </p>
 
 ## Python dependencies
